@@ -71,9 +71,9 @@ In simple words, you should be able to say:
 
 ### Prerequisites
 
-1. Complete the [lab setup](./lab/tasks/setup-simple.md#lab-setup)
+1. Complete the [lab setup](./lab/setup/setup-simple.md#lab-setup)
 
-> **Note**: If this is the first lab you are attempting in this course, you need to do the [full version of the setup](./lab/tasks/setup.md#lab-setup)
+> **Note**: If this is the first lab you are attempting in this course, you need to do the [full version of the setup](./lab/setup/setup-full.md#lab-setup)
 
 ### Required
 
