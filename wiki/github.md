@@ -58,6 +58,12 @@
 - [File preview](#file-preview)
   - [`Markdown` file preview](#markdown-file-preview)
     - [Copy code block](#copy-code-block)
+- [`gh`](#gh)
+  - [Set up `gh`](#set-up-gh)
+  - [Install `gh`](#install-gh)
+    - [Install `gh` using `Nix`](#install-gh-using-nix)
+  - [Check that `gh` works](#check-that-gh-works)
+  - [Authorize `gh`](#authorize-gh)
 - [Troubleshooting](#troubleshooting)
   - [`git` asks for a password](#git-asks-for-a-password)
   - [`fatal: destination path <directory-path> already exists and is not an empty directory.`](#fatal-destination-path-directory-path-already-exists-and-is-not-an-empty-directory)
@@ -510,6 +516,73 @@ Code block example:
 ```terminal
 ls .
 ```
+
+## `gh`
+
+`gh` is a [CLI](./cli.md#what-is-a-cli) for interacting with [`GitHub`](#what-is-github).
+
+You can allow your [coding agent](./coding-agents.md#what-is-a-coding-agent) to use `gh` to automate work with `GitHub`.
+
+### Set up `gh`
+
+Complete these steps:
+
+1. [Install `gh`](#install-gh)
+2. [Authorize `gh`](#authorize-gh)
+
+### Install `gh`
+
+- Method 1: [Install `gh` using `Nix`](#install-gh-using-nix)
+- Method 2: [Install using the official instructions](https://github.com/cli/cli?tab=readme-ov-file#installation)
+
+#### Install `gh` using `Nix`
+
+1. [Install `Nix`](./nix.md#install-nix) if not yet installed.
+
+2. To install [`gh`](#gh) from [`nixpkgs`](./nix.md#nixpkgs),
+
+   [run in the `VS Code Terminal`](./vs-code.md#run-a-command-in-the-vs-code-terminal)
+
+   ```terminal
+   nix profile install nixpkgs#gh
+   ```
+
+### Check that `gh` works
+
+1. To check that [`gh`](#gh) works,
+
+   [run in the `VS Code Terminal`](./vs-code.md#run-a-command-in-the-vs-code-terminal)
+
+   ```terminal
+   gh --version
+   ```
+
+   The output should be similar to this:
+
+   ```terminal
+   gh version 2.87.3 (nixpkgs)
+   https://github.com/cli/cli/releases/tag/v2.87.3
+   ```
+
+### Authorize `gh`
+
+1. To authorize `gh` to use your [`GitHub` account],
+
+   [run in the `VS Code Terminal`](./vs-code.md#run-a-command-in-the-vs-code-terminal)
+
+   ```terminal
+   gh auth login
+   ```
+
+2. Select `GitHub.com` using the keyboard (`UpArrow`, `DownArrow`).
+
+3. Select `HTTPS` using the keyboard (`UpArrow`, `DownArrow`).
+
+4. When prompted `Authenticate Git with your GitHub credentials? (Y/n)`, type `y`.
+
+5. Select `Login with a web browser` or `Paste an authentication token`.
+
+6. Follow the instructions to complete the authentication.
 
 ## Troubleshooting
 
