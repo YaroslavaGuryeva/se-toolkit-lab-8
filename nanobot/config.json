@@ -28,7 +28,7 @@
       "lms": {
         "type": "stdio",
         "command": "python",
-        "args": ["-m", "nanobot_lms_mcp"]
+        "args": ["-m", "lms_mcp"]
       }
     }
   }

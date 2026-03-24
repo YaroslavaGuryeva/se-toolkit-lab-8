@@ -1,6 +1,6 @@
 """Pure formatting functions for LMS data — no I/O, no async."""
 
-from nanobot_common.models import HealthResult, Item, PassRate
+from lms_common.models import HealthResult, Item, PassRate
 
 
 def format_health(result: HealthResult) -> str:

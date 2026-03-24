@@ -1,8 +1,8 @@
-"""LMS API client shared by nanobot channel plugins."""
+"""Async HTTP client for the LMS backend API."""
 
 import httpx
 
-from nanobot_common.models import (
+from lms_common.models import (
     CompletionRate,
     GroupPerformance,
     HealthResult,

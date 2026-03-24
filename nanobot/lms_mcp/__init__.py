@@ -12,7 +12,7 @@ from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 from pydantic import BaseModel, Field
 
-from nanobot_common.lms_client import LMSClient
+from lms_common.lms_client import LMSClient
 
 _base_url: str = ""
 
@@ -46,7 +46,7 @@ def _client(api_key: str) -> LMSClient:
     if not _base_url:
         raise RuntimeError(
             "LMS backend URL not configured. "
-            "Pass it as: python -m nanobot_lms_mcp <base_url>"
+            "Pass it as: python -m lms_mcp <base_url>"
         )
     return LMSClient(_base_url, api_key)
 

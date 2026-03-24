@@ -13,7 +13,7 @@ requires = ["setuptools>=75.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["nanobot_common*", "nanobot_lms_mcp*", "nanobot_webchat*"]
+include = ["lms_common*", "lms_mcp*", "nanobot_webchat*"]
 
 [project.entry-points."nanobot.channels"]
 webchat = "nanobot_webchat:WebChatChannel"

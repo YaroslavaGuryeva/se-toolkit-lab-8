@@ -1,8 +1,8 @@
-"""Shared utilities for nanobot channel plugins."""
+"""Shared LMS client library — models, HTTP client, formatters."""
 
-from nanobot_common.formatters import format_health, format_labs, format_scores
-from nanobot_common.lms_client import LMSClient
-from nanobot_common.models import (
+from lms_common.formatters import format_health, format_labs, format_scores
+from lms_common.lms_client import LMSClient
+from lms_common.models import (
     CompletionRate,
     GroupPerformance,
     HealthResult,
