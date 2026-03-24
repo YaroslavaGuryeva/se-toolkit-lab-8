@@ -30,5 +30,9 @@ class NanobotClient:
             data: dict[str, Any] = json.loads(raw)
             # Backwards compat: if no type field, wrap as text
             if "type" not in data:
-                return {"type": "text", "content": data.get("content", ""), "format": "markdown"}
+                return {
+                    "type": "text",
+                    "content": data.get("content", ""),
+                    "format": "markdown",
+                }
             return data
