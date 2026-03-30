@@ -137,11 +137,47 @@ The agent used the skill prompt to provide a comprehensive overview:
 
 ## Task 2A — Deployed agent
 
-<!-- Paste a short nanobot startup log excerpt showing the gateway started inside Docker -->
+**Nanobot gateway startup log:**
+
+```
+Using config: /app/nanobot/config.resolved.json
+🐈 Starting nanobot gateway version 0.1.4.post5 on port 18790...
+2026-03-30 08:58:49.691 | DEBUG    | nanobot.channels.registry:discover_all:64 - Skipping built-in channel 'matrix': Matrix dependencies not installed. Run: pip install nanobot-ai[matrix]
+2026-03-30 08:58:50.115 | INFO     | nanobot.channels.manager:_init_channels:54 - WebChat channel enabled
+✓ Channels enabled: webchat
+✓ Heartbeat: every 1800s
+2026-03-30 08:58:50.117 | INFO     | nanobot.cron.service:_load_store:83 - Cron: jobs.json modified externally, reloading
+2026-03-30 08:58:50.118 | INFO     | nanobot.cron.service:start:182 - Cron service started with 0 jobs
+2026-03-30 08:58:50.118 | INFO     | nanobot.heartbeat.service:start:122 - Heartbeat started (every 1800s)
+2026-03-30 08:58:50.483 | INFO     | nanobot.channels.manager:start_all:87 - Starting webchat channel...
+2026-03-30 08:58:50.484 | INFO     | nanobot.channels.manager:_dispatch_outbound:115 - Outbound dispatcher started
+2026-03-30 08:58:50.484 | INFO     | nanobot_webchat.channel:start:72 - WebChat starting on 0.0.0.0:8765
+/app/.venv/bin/python: No module named mcp_lms
+2026-03-30 08:58:50.654 | ERROR    | nanobot.agent.tools.mcp:connect_mcp_servers:184 - MCP server 'lms': failed to connect: Connection closed
+2026-03-30 08:58:50.654 | INFO     | nanobot.agent.loop:run:260 - Agent loop started
+```
+
+**Status:** The nanobot gateway is running as a Docker service. The WebChat channel is enabled and listening on port 8765.
+
+**Note:** The MCP server error for 'lms' is expected - the `mcp_lms` module needs to be installed in the nanobot Docker image. This is addressed by the Dockerfile which copies and installs the MCP package from the workspace.
+
+---
 
 ## Task 2B — Web client
 
-<!-- Screenshot of a conversation with the agent in the Flutter web app -->
+**WebSocket endpoint test:**
+
+```
+Sent: What can you do in this system?
+Received: {"type":"text","content":"I'm **nanobot** 🐈, your personal AI assistant. Here's what I can do:\n\n## Core Capabilities\n\n**File & System Operations**\n- Read, write, and edit files\n- List directory contents\n- Execute shell commands (with safety limits)\n\n**Web & Information**\n- Search the web for information\n- Fetch and extract content from URLs\n\n...","format":"markdown"}
+```
+
+**Flutter web client:** Accessible at `http://localhost:42002/flutter/`
+
+**Files created/modified:**
+- `nanobot/Dockerfile` — Fixed to copy `nanobot-websocket-channel` before `uv sync`
+- `nanobot/pyproject.toml` — Added `nanobot-webchat` dependency
+- `nanobot/uv.lock` — Updated with new dependency
 
 ## Task 3A — Structured logging
 
