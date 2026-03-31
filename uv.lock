@@ -911,6 +911,7 @@ name = "lms-mcp"
 version = "1.0.0"
 source = { editable = "mcp" }
 dependencies = [
+    { name = "aiohttp" },
     { name = "httpx" },
     { name = "mcp" },
     { name = "pydantic" },
@@ -918,6 +919,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", specifier = ">=3.9.0,<4.0.0" },
     { name = "httpx", specifier = ">=0.28.0,<1.0.0" },
     { name = "mcp", specifier = ">=1.26.0,<2.0.0" },
     { name = "pydantic", specifier = ">=2.12.0,<3.0.0" },
