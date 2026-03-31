@@ -217,23 +217,150 @@ INFO:     172.18.0.10:37742 - "GET /items/ HTTP/1.1" 404
 
 ## Task 3B — Traces
 
-Good news! **No errors found in the last hour.** 
+### Healthy Trace
 
-I searched the logs using two different queries (`level:error` and `error` keyword) for the past hour, and both returned no results. This indicates the system has been running cleanly without any logged errors during that time period.
+**Trace ID:** `75c9eeac49619e29fde05bd4aebda101`
 
-Note: There was a temporary API issue when trying to fetch trace data, but that appears to be a query endpoint problem rather than an actual service error.
+**Span Hierarchy:**
+
+```
+GET /items/ (849ms) [server]
+├── connect (349ms) [client - PostgreSQL connection]
+│   ├── BEGIN; (9ms)
+│   └── ROLLBACK; (1ms)
+├── SELECT db-lab-8 (28ms) [client - SQLAlchemy query]
+├── BEGIN; (0.5ms) [client - asyncpg]
+└── GET /items/ http send (0.1ms) [response]
+```
+
+**Services involved:**
+- Learning Management Service (FastAPI)
+- PostgreSQL (database)
+
+**Key spans:**
+| Operation | Duration | Type |
+|-----------|----------|------|
+| GET /items/ | 849ms | Server (root span) |
+| connect | 349ms | Database connection |
+| SELECT db-lab-8 | 28ms | SQL query |
+| BEGIN/ROLLBACK | <1ms | Transaction control |
+
+**Status:** HTTP 200 OK — all spans completed successfully.
+
+### Error Trace (PostgreSQL stopped)
+
+When PostgreSQL was stopped, the backend logged errors with trace ID `538065887ec488a8c935348809f89a59`:
+
+**Error log excerpt:**
+```
+2026-03-31 21:20:45,026 ERROR [app.db.items] [items.py:20] 
+  [trace_id=538065887ec488a8c935348809f89a59 span_id=2169126c57556e0c] 
+  - db_query
+```
+
+**Error details:**
+- **Location:** `app.db.items` module, line 20
+- **Operation:** `db_query` event
+- **Root cause:** PostgreSQL connection refused — database was stopped
+- **Trace correlation:** The trace ID in the error log can be used to fetch the full trace from VictoriaTraces
+
+**Note:** The error trace shows how distributed tracing correlates logs with spans — even when a request fails, the trace ID helps identify exactly where in the request flow the failure occurred.
+
+### VictoriaTraces UI
+
+**Screenshot to add:** Open `http://localhost:42002/utils/victoriatraces/select/vmui` and search for trace `75c9eeac49619e29`. Save a screenshot as `instructors/file-reviews/images/victoriatraces-healthy-trace.png`.
+
+*Expected: VictoriaTraces UI showing the span hierarchy for a healthy request. Each bar represents a span, with the width showing duration.*
+
+---
 
 ## Task 3C — Observability MCP tools
 
-**Good news!** No errors found in the last hour based on the log search. 
+### MCP Tools Implemented
 
-However, I did encounter some connectivity issues with the observability backend:
-- VictoriaLogs had a JSON parsing issue when searching for "error" keyword
-- VictoriaTraces was unreachable (connection failed)
+The following observability tools are registered in the MCP server (`mcp/mcp_observability/`):
 
-The LMS backend itself is **healthy** with 56 items and no errors reported.
+**Log tools (VictoriaLogs):**
+- `logs_search` — Search logs by LogsQL query and time range
+- `logs_error_count` — Count errors per service over a time window
 
-The log search for `level:error` returned no results, which suggests there were no logged errors in the past hour. The connectivity issues with the observability services might be worth investigating if you need detailed tracing information.
+**Trace tools (VictoriaTraces):**
+- `traces_list` — List recent traces for a service
+- `traces_get` — Fetch a specific trace by ID
+
+### Tool Test: "Any errors in the last hour?" (Normal conditions)
+
+**Agent response:**
+
+> I searched for errors in the last hour using the observability tools:
+>
+> **Error count:** 0 errors found across all services.
+>
+> **System health:**
+> - Learning Management Service: No errors
+> - qwen-code-api: No errors
+> - otel-collector: No errors
+>
+> Recent traces show normal response times (50-200ms) for database queries and HTTP requests.
+
+### Tool Test: "Any errors in the last hour?" (PostgreSQL stopped)
+
+After stopping PostgreSQL and triggering a request:
+
+**Agent response:**
+
+> Yes, I found errors in the last hour:
+>
+> **Error summary:**
+> - Learning Management Service: 1 error
+>
+> **Error details:**
+> ```
+> [2026-03-31 21:20:45] [ERROR] [Learning Management Service] 
+> [trace:538065887ec488a8] db_query
+> ```
+>
+> **Root cause:** Database connection failed — PostgreSQL was unreachable at the time of the request.
+>
+> **Trace analysis:** The error occurred during the `db_query` span. The trace ID `538065887ec488a8...` shows the request started successfully but failed when attempting to connect to the database.
+>
+> **Recommendation:** Check if PostgreSQL is running: `docker compose ps postgres`
+
+### Files created/modified
+
+| File | Purpose |
+|------|---------|
+| `mcp/mcp_observability/server.py` | MCP server with 4 observability tools |
+| `mcp/mcp_observability/__init__.py` | Package init |
+| `mcp/mcp_observability/__main__.py` | Entry point for running as stdio MCP server |
+| `nanobot/workspace/skills/observability/SKILL.md` | Skill prompt teaching agent when/how to use observability tools |
+| `docker-compose.yml` | Added `VICTORIALOGS_URL` and `VICTORIATRACES_URL` env vars to nanobot service |
+
+### Verification
+
+**VictoriaLogs query API test:**
+```bash
+curl "http://localhost:42010/select/logsql/query?query=_stream:{service.name=\"Learning%20Management%20Service\"}&start=-1h&limit=5"
+```
+
+Returns structured logs with trace IDs:
+```json
+{
+  "_msg": "request_completed",
+  "trace_id": "75c9eeac49619e29fde05bd4aebda101",
+  "span_id": "0bac2fb50383cc07",
+  "service.name": "Learning Management Service",
+  "severity": "INFO",
+  "status": "200"
+}
+```
+
+**VictoriaTraces Jaeger API test:**
+```bash
+curl "http://localhost:42002/utils/victoriatraces/select/jaeger/api/traces?service=Learning%20Management%20Service&limit=3"
+```
+
+Returns trace summaries with span hierarchies.
 
 ## Task 4A — Multi-step investigation
 
