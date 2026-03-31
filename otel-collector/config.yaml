@@ -21,13 +21,13 @@ exporters:
   debug:
     verbosity: detailed
 
-  otlphttp/victorialogs:
-    logs_endpoint: http://victorialogs:9428/insert/opentelemetry/v1/logs
+  otlp_http/victorialogs:
+    endpoint: http://victorialogs:9428/insert/opentelemetry
     tls:
       insecure: true
 
-  otlphttp/victoriatraces:
-    traces_endpoint: http://victoriatraces:10428/insert/opentelemetry/v1/traces
+  otlp_http/victoriatraces:
+    endpoint: http://victoriatraces:10428/insert/opentelemetry
     tls:
       insecure: true
 
@@ -36,8 +36,8 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/victoriatraces]
+      exporters: [otlp_http/victoriatraces]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/victorialogs, debug]
+      exporters: [otlp_http/victorialogs, debug]

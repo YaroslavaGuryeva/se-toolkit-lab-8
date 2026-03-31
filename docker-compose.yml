@@ -111,6 +111,9 @@ services:
       # MCP LMS server configuration
       - NANOBOT_LMS_BACKEND_URL=http://backend:${BACKEND_CONTAINER_PORT:?'BACKEND_CONTAINER_PORT is required'}
       - NANOBOT_LMS_API_KEY=${LMS_API_KEY:?'LMS_API_KEY is required'}
+      # MCP Observability server configuration
+      - VICTORIALOGS_URL=http://victorialogs:${CONST_VICTORIALOGS_CONTAINER_PORT:?'CONST_VICTORIALOGS_CONTAINER_PORT is required'}
+      - VICTORIATRACES_URL=http://victoriatraces:8428
       # WebSocket channel configuration
       - NANOBOT_GATEWAY_CONTAINER_ADDRESS=${NANOBOT_GATEWAY_CONTAINER_ADDRESS:?'NANOBOT_GATEWAY_CONTAINER_ADDRESS is required'}
       - NANOBOT_GATEWAY_CONTAINER_PORT=${NANOBOT_GATEWAY_CONTAINER_PORT:?'NANOBOT_GATEWAY_CONTAINER_PORT is required'}
@@ -120,6 +123,8 @@ services:
     depends_on:
       - backend
       - qwen-code-api
+      - victorialogs
+      - victoriatraces
 
   # Task 2B — Flutter web client
   client-web-flutter:
@@ -237,11 +242,13 @@ services:
       - lms-network
     ports:
       - ${VICTORIATRACES_HOST_ADDRESS:?'VICTORIATRACES_HOST_ADDRESS is required'}:${VICTORIATRACES_HOST_PORT:?'VICTORIATRACES_HOST_PORT is required'}:${CONST_VICTORIATRACES_CONTAINER_PORT:?'CONST_VICTORIATRACES_CONTAINER_PORT is required'}
+      - 127.0.0.1:16686:16686
     volumes:
       - victoriatraces_data:/victoria-traces-data
     command:
       - -storageDataPath=/victoria-traces-data
       - -retentionPeriod=7d
+      - -httpListenAddr=:8428
 
   otel-collector:
     image: ${REGISTRY_PREFIX_DOCKER_HUB:-}otel/opentelemetry-collector-contrib:latest

@@ -181,15 +181,59 @@ Received: {"type":"text","content":"I'm **nanobot** 🐈, your personal AI assis
 
 ## Task 3A — Structured logging
 
-<!-- Paste happy-path and error-path log excerpts, VictoriaLogs query screenshot -->
+### Happy-path log excerpt (status 200)
+
+```
+2026-03-30 20:38:12,314 INFO [app.main] [main.py:60] [trace_id=444db2a769e07f7b1b36cd5b433d2226 span_id=590c951a098fa92d resource.service.name=Learning Management Service trace_sampled=True] - request_started
+2026-03-30 20:38:12,316 INFO [app.auth] [auth.py:30] [trace_id=444db2a769e07f7b1b36cd5b433d2226 span_id=590c951a098fa92d resource.service.name=Learning Management Service trace_sampled=True] - auth_success
+2026-03-30 20:38:12,317 INFO [app.db.items] [items.py:16] [trace_id=444db2a769e07f7b1b36cd5b433d2226 span_id=590c951a098fa92d resource.service.name=Learning Management Service trace_sampled=True] - db_query
+2026-03-30 20:38:12,385 INFO [app.main] [main.py:68] [trace_id=444db2a769e07f7b1b36cd5b433d2226 span_id=590c951a098fa92d resource.service.name=Learning Management Service trace_sampled=True] - request_completed
+INFO:     172.18.0.10:60096 - "GET /items/ HTTP/1.1" 200
+```
+
+**Flow:** `request_started` → `auth_success` → `db_query` → `request_completed` (200 OK)
+
+### Error-path log excerpt (PostgreSQL stopped)
+
+```
+2026-03-30 21:02:11,648 INFO [app.main] [main.py:60] [trace_id=b17707bcd7fa37534977d9574f345210 span_id=8327577da0a98ac4 resource.service.name=Learning Management Service trace_sampled=True] - request_started
+2026-03-30 21:02:11,661 INFO [app.auth] [auth.py:30] [trace_id=b17707bcd7fa37534977d9574f345210 span_id=8327577da0a98ac4 resource.service.name=Learning Management Service trace_sampled=True] - auth_success
+2026-03-30 21:02:11,663 INFO [app.db.items] [items.py:16] [trace_id=b17707bcd7fa37534977d9574f345210 span_id=8327577da0a98ac4 resource.service.name=Learning Management Service trace_sampled=True] - db_query
+2026-03-30 21:02:12,326 ERROR [app.db.items] [items.py:20] [trace_id=b17707bcd7fa37534977d9574f345210 span_id=8327577da0a98ac4 resource.service.name=Learning Management Service trace_sampled=True] - db_query
+2026-03-30 21:02:12,328 INFO [app.main] [main.py:68] [trace_id=b17707bcd7fa37534977d9574f345210 span_id=8327577da0a98ac4 resource.service.name=Learning Management Service trace_sampled=True] - request_completed
+INFO:     172.18.0.10:37742 - "GET /items/ HTTP/1.1" 404
+```
+
+**Flow:** `request_started` → `auth_success` → `db_query` (INFO) → `db_query` (ERROR) → `request_completed` (404)
+
+**Error details:** `[Errno -2] Name or service not known` — database connection failed
+
+### VictoriaLogs query screenshot
+
+![VictoriaLogs error query](instructors/file-reviews/images/victorialogs-error-query.png)
+
+*Query:* `{"service.name"="Learning Management Service"} AND SeverityText=ERROR`
+
 
 ## Task 3B — Traces
 
-<!-- Screenshots: healthy trace span hierarchy, error trace -->
+Good news! **No errors found in the last hour.** 
+
+I searched the logs using two different queries (`level:error` and `error` keyword) for the past hour, and both returned no results. This indicates the system has been running cleanly without any logged errors during that time period.
+
+Note: There was a temporary API issue when trying to fetch trace data, but that appears to be a query endpoint problem rather than an actual service error.
 
 ## Task 3C — Observability MCP tools
 
-<!-- Paste agent responses to "any errors in the last hour?" under normal and failure conditions -->
+**Good news!** No errors found in the last hour based on the log search. 
+
+However, I did encounter some connectivity issues with the observability backend:
+- VictoriaLogs had a JSON parsing issue when searching for "error" keyword
+- VictoriaTraces was unreachable (connection failed)
+
+The LMS backend itself is **healthy** with 56 items and no errors reported.
+
+The log search for `level:error` returned no results, which suggests there were no logged errors in the past hour. The connectivity issues with the observability services might be worth investigating if you need detailed tracing information.
 
 ## Task 4A — Multi-step investigation
 
