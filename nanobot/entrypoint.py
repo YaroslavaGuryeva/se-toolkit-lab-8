@@ -46,6 +46,8 @@ def main() -> None:
     # Resolve MCP server environment variables
     lms_backend_url = os.environ.get("NANOBOT_LMS_BACKEND_URL")
     lms_api_key = os.environ.get("NANOBOT_LMS_API_KEY")
+    victorialogs_url = os.environ.get("VICTORIALOGS_URL")
+    victoriatraces_url = os.environ.get("VICTORIATRACES_URL")
 
     if "mcpServers" in config.get("tools", {}):
         if "lms" in config["tools"]["mcpServers"]:
@@ -56,6 +58,15 @@ def main() -> None:
             if lms_api_key:
                 config["tools"]["mcpServers"]["lms"]["env"]["NANOBOT_LMS_API_KEY"] = (
                     lms_api_key
+                )
+        if "observability" in config["tools"]["mcpServers"]:
+            if victorialogs_url:
+                config["tools"]["mcpServers"]["observability"]["env"]["VICTORIALOGS_URL"] = (
+                    victorialogs_url
+                )
+            if victoriatraces_url:
+                config["tools"]["mcpServers"]["observability"]["env"]["VICTORIATRACES_URL"] = (
+                    victoriatraces_url
                 )
 
     # Write resolved config

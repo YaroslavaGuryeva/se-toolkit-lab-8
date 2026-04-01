@@ -39,6 +39,10 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:${CONST_OTEL_COLLECTOR_GRPC_PORT:?'CONST_OTEL_COLLECTOR_GRPC_PORT is required'}
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
       - OTEL_PYTHON_LOG_CORRELATION=true
+      - OTEL_BSP_SCHEDULE_DELAY=100
+      - OTEL_BSP_EXPORT_TIMEOUT=500
+      - OTEL_BSP_MAX_QUEUE_SIZE=512
+      - OTEL_BSP_MAX_EXPORT_BATCH_SIZE=64
     depends_on:
       postgres:
         condition: service_healthy
