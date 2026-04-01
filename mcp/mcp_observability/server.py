@@ -185,7 +185,10 @@ def _format_trace_summary(trace: dict) -> str:
 
 
 async def _logs_search(query: str, start: str, end: str, limit: int) -> list[dict]:
-    """Search logs using VictoriaLogs HTTP API."""
+    """Search logs using VictoriaLogs HTTP API.
+    
+    VictoriaLogs returns newline-delimited JSON (NDJSON), where each line is a separate JSON object.
+    """
     url = f"{_VICTORIALOGS_URL}/select/logsql/query"
     params = {
         "query": query,
@@ -200,16 +203,26 @@ async def _logs_search(query: str, start: str, end: str, limit: int) -> list[dic
                 text = await response.text()
                 raise RuntimeError(f"VictoriaLogs API error: {response.status} - {text}")
 
-            # VictoriaLogs returns JSON with a "data" field containing log entries
-            data = await response.json()
-            return data.get("data", []) if isinstance(data, dict) else data
+            # VictoriaLogs returns NDJSON (newline-delimited JSON)
+            text = await response.text()
+            if not text.strip():
+                return []
+            
+            logs = []
+            for line in text.strip().split('\n'):
+                if line.strip():
+                    try:
+                        logs.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+            return logs
 
 
 async def _logs_error_count(start: str, end: str) -> list[dict]:
     """Count errors per service using VictoriaLogs."""
-    # Query for all error-level logs using proper LogsQL syntax
-    # Use _stream filter and severity field
-    query = '_stream{level="error"}'
+    # Query for all error-level logs using VictoriaLogs LogsQL syntax
+    # The severity field is uppercase: ERROR, INFO, WARN, etc.
+    query = 'severity:ERROR'
 
     url = f"{_VICTORIALOGS_URL}/select/logsql/query"
     params = {
@@ -225,8 +238,18 @@ async def _logs_error_count(start: str, end: str) -> list[dict]:
                 text = await response.text()
                 raise RuntimeError(f"VictoriaLogs API error: {response.status} - {text}")
 
-            data = await response.json()
-            logs = data.get("data", []) if isinstance(data, dict) else data
+            # VictoriaLogs returns NDJSON (newline-delimited JSON)
+            text = await response.text()
+            if not text.strip():
+                return []
+            
+            logs = []
+            for line in text.strip().split('\n'):
+                if line.strip():
+                    try:
+                        logs.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
 
             # Count errors by service
             error_counts: dict[str, int] = {}
@@ -244,7 +267,8 @@ async def _logs_error_count(start: str, end: str) -> list[dict]:
 
 async def _traces_list(service: str, limit: int) -> list[dict]:
     """List recent traces for a service using VictoriaTraces Jaeger API."""
-    url = f"{_VICTORIATRACES_URL}/api/traces"
+    # VictoriaTraces Jaeger API is at /select/jaeger/api/traces, not /api/traces
+    url = f"{_VICTORIATRACES_URL}/select/jaeger/api/traces"
     params = {
         "service": service,
         "limit": limit,
@@ -264,7 +288,8 @@ async def _traces_list(service: str, limit: int) -> list[dict]:
 
 async def _traces_get(trace_id: str) -> dict:
     """Fetch a specific trace by ID using VictoriaTraces Jaeger API."""
-    url = f"{_VICTORIATRACES_URL}/api/traces/{trace_id}"
+    # VictoriaTraces Jaeger API is at /select/jaeger/api/traces/{trace_id}
+    url = f"{_VICTORIATRACES_URL}/select/jaeger/api/traces/{trace_id}"
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:

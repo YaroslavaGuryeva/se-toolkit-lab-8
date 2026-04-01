@@ -364,7 +364,57 @@ Returns trace summaries with span hierarchies.
 
 ## Task 4A — Multi-step investigation
 
-<!-- Paste the agent's response to "What went wrong?" showing chained log + trace investigation -->
+**Agent response to "What went wrong?" (with PostgreSQL stopped):**
+
+Based on my investigation, here's what went wrong with the LMS system:
+
+## Issue Summary
+
+**The LMS backend service is unreachable.** The system is experiencing connection failures.
+
+## Evidence
+
+1. **API Errors:**
+   - `GET /items/` → HTTP 404 Not Found (when listing labs)
+   - `POST /pipeline/sync` → HTTP 500 Internal Server Error
+
+2. **Health Check:**
+   - Status: **unhealthy**
+   - Item count: unknown
+
+3. **Trace Analysis:**
+   - Recent traces show errors in:
+     - `POST /pipeline/sync` 
+     - `connect` operations
+   - Multiple `GET /items/` requests failing at the connection layer
+
+## Root Cause
+
+The pattern of "connect" errors in the traces suggests the LMS backend service (`http://backend:8000`) is either:
+- **Not running** (service crashed or never started)
+- **Network isolation** (can't reach the backend container/host)
+- **Misconfigured** (wrong port or endpoint)
+
+## Recommended Actions
+
+1. Check if the backend service is running
+2. Verify network connectivity to `backend:8000`
+3. Review backend service logs for startup errors
+4. Check container/service orchestration (Docker, Kubernetes, etc.)
+
+---
+
+**Note:** The agent's response was generic. The actual root cause (found via direct trace inspection) is:
+- **Error:** `[Errno -2] Name or service not known` (socket.gaierror)
+- **Location:** `connect` span when trying to connect to `postgres:5432`
+- **Root cause:** PostgreSQL was stopped, so the backend couldn't resolve the `postgres` hostname
+
+The agent should have used the observability MCP tools to:
+1. Call `logs_search` with `query="level:error"` and `start="-5m"`
+2. Extract the `trace_id` from error logs
+3. Call `traces_get` with that trace ID
+4. Summarize the span hierarchy showing the database connection failure
+
 
 ## Task 4B — Proactive health check
 
@@ -372,7 +422,87 @@ Returns trace summaries with span hierarchies.
 
 ## Task 4C — Bug fix and recovery
 
-<!-- 1. Root cause identified
-     2. Code fix (diff or description)
-     3. Post-fix response to "What went wrong?" showing the real underlying failure
-     4. Healthy follow-up report or transcript after recovery -->
+### 1. Root Cause — Planted Bug
+
+**Location:** `backend/app/routers/items.py`, lines 17-22
+
+**Bug:** The `get_items` endpoint caught all exceptions (including database connection errors) and returned HTTP 404 Not Found:
+
+```python
+@router.get("/", response_model=list[ItemRecord])
+async def get_items(session: AsyncSession = Depends(get_session)):
+    """Get all items."""
+    try:
+        return await read_items(session)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,  # ← BUG: Should be 500
+            detail="Items not found",
+        ) from exc
+```
+
+**Why it's wrong:** A 404 status code means "resource not found" — the requested URL doesn't exist. But when PostgreSQL is stopped, the database connection fails, which is a **server error** (500), not a missing resource.
+
+### 2. Fix Applied
+
+Changed the exception handler to return HTTP 500 with the actual error message:
+
+```python
+@router.get("/", response_model=list[ItemRecord])
+async def get_items(session: AsyncSession = Depends(get_session)):
+    """Get all items."""
+    try:
+        return await read_items(session)
+    except Exception as exc:
+        # Database errors (connection failures, etc.) should return 500, not 404
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(exc)}",
+        ) from exc
+```
+
+**Diff:**
+```diff
+- status_code=status.HTTP_404_NOT_FOUND,
+- detail="Items not found",
++ status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
++ detail=f"Database error: {str(exc)}",
+```
+
+### 3. Post-Fix Verification (PostgreSQL Stopped)
+
+After rebuilding and redeploying the backend, with PostgreSQL stopped:
+
+**Request:**
+```bash
+curl http://localhost:42002/items/ -H "Authorization: Bearer <key>"
+```
+
+**Response (after fix):**
+```json
+{"detail":"Database error: [Errno -2] Name or service not known"}
+```
+**HTTP Status:** 500 (was 404 before fix)
+
+The error message now correctly identifies the root cause: DNS resolution failure when trying to connect to the `postgres` hostname.
+
+### 4. Healthy Follow-Up (PostgreSQL Restarted)
+
+After restarting PostgreSQL:
+
+```bash
+docker compose --env-file .env.docker.secret start postgres
+```
+
+**Request:**
+```bash
+curl http://localhost:42002/items/ -H "Authorization: Bearer <key>"
+```
+
+**Response:**
+```json
+[{"id":1,"type":"lab","title":"Lab 01 – Products, Architecture & Roles",...}, ...]
+```
+**HTTP Status:** 200 OK
+
+The system is now healthy and returns the expected data.
