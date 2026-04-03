@@ -179,6 +179,10 @@ Received: {"type":"text","content":"I'm **nanobot** 🐈, your personal AI assis
 - `nanobot/pyproject.toml` — Added `nanobot-webchat` dependency
 - `nanobot/uv.lock` — Updated with new dependency
 
+### Flutter web client screenshot
+
+![Flutter webchat conversation](instructors/file-reviews/images/2B.png)
+
 ## Task 3A — Structured logging
 
 ### Happy-path log excerpt (status 200)
@@ -210,7 +214,7 @@ INFO:     172.18.0.10:37742 - "GET /items/ HTTP/1.1" 404
 
 ### VictoriaLogs query screenshot
 
-![VictoriaLogs error query](instructors/file-reviews/images/victorialogs-error-query.png)
+![VictoriaLogs error query](instructors/file-reviews/images/VictoriaLogs_3A.png)
 
 *Query:* `{"service.name"="Learning Management Service"} AND SeverityText=ERROR`
 
@@ -268,11 +272,14 @@ When PostgreSQL was stopped, the backend logged errors with trace ID `538065887e
 
 ### VictoriaTraces UI
 
-**Screenshot to add:** Open `http://localhost:42002/utils/victoriatraces/select/vmui` and search for trace `75c9eeac49619e29`. Save a screenshot as `instructors/file-reviews/images/victoriatraces-healthy-trace.png`.
+### VictoriaTraces UI — Healthy trace
 
-*Expected: VictoriaTraces UI showing the span hierarchy for a healthy request. Each bar represents a span, with the width showing duration.*
+![VictoriaTraces healthy trace](instructors/file-reviews/images/3B_Happytrace.png)
 
----
+### VictoriaTraces UI — Error trace
+
+![VictoriaTraces error trace](instructors/file-reviews/images/3B_error.png)
+
 
 ## Task 3C — Observability MCP tools
 
